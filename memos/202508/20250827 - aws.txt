@@ -1,0 +1,56 @@
+어제자 진행 내용
+
+RDS를 통한 AWS 환경에서의 RDB 구축 및 타 인스턴스와 연결
+최종적으로는 s3(프론트엔드, vite) - ec2(백엔드, 스프링부트) - RDS(DB, MySQL)의 3tier 구조 구현
+
+
+
+RDS 특징
+- 관계형 DB를 자동관리해주는 데에 특화
+- 규모가 커질수록 월간 이용비가 대폭 증가
+
+
+작업내용 중 특이사항
+- RDS에는 ec2를 통해서 간접적으로 접근해야 했음
+- >> RDS - EC2 -(ssh 접속 설정 추가)- DBeaver
+
+기타 메모
+- vite는 npm run build로 빌드하는데, 이 때 .env.production을 참고한다
+- .env.production에 있던 VITE_API_URL이 js에서 안 보여서 한참 헤맸는데, 실제 사용되는 변수명은 환경변수 VITE_API_URL를 불러와서 입력받은 baseURL이었음
+- 실제로 dist 폴더 안의 js에서는 baseURL로 검색하면 ip값을 찾아볼 수 있었음
+
+
+
+
+
+
+오늘자 내용
+
+서버와 사용자의 거리에 따라 어쩔 수 없이 응답시간이 증가하는 문제가 있음
+>> cloud front를 이용해 캐시를 만드는 것으로 로딩속도를 단축할 수 있음
+
+
+
+작업 순서
+- cloudfront 배포 생성
+- 이 때 s3를 지정하면서 S3 static website로 설정
+- 이후 cloudfront의 배포 도메인 이름으로 웹페이지 접속 가능
+
+- 멀티 오리진으로 시프트 개시
+- [원본] 탭의 원본 생성 클릭
+- ec2의 dns 입력
+
+- 동작 생성(현재 프로젝트 사정상 [http만] 옵션으로)
+- 캐시 정책이 중요 > 우선은 disabled로 생성
+
+
+여기까지 오전 작업
+대충 s3에서 접속하는 것은 todolist 목록이 안 뜨고
+cloudfront에서 접속하는 것은 목록이 뜨게 됨
+
+
+
+오후 작업
+
+static 동작 추가해서 테스트
+cloudfront에서 sql 보호와 rate limiting 테스트
