@@ -1,0 +1,20 @@
+테라폼에서는 variable을 통해서 하드코딩을 줄이기 위한 설정을 따로 뺄 수도 있고
+모듈이라는 것을 이용할 수도 있다
+
+* 테라폼에서 가리키는 리소스는 ec2 인스턴스, 서브넷 등 aws가 제공하는 모든 요소
+
+모듈
+- vpc는 단일 리소스가 아닌 여러 리소스의 복합체
+- vpc 하나를 구성하기 위해서 필요한 모든 리소스를 일일이 resource로 정의해서 구성하는 것은 복잡함
+- 이러한 복합적인 리소스 집합체를 쉽게 구현하기 위해서 module이 정의되어있음
+- 참고 : https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest
+
+
+
+
+테라폼은 app.terraform.io를 통해서 HCP Terraform이라는 깃허브와 유사한 협업툴을 이용할 수 있다
+
+미리 HCP에 맞춘 tf들을 준비한 뒤에 terraform login을 하고 init을 하면
+테라폼 계정 내에 워크스페이스가 연결(혹은 생성)된다
+
+워크스페이스에 들어가 aws 액세스 키를 변수로 넣어주면 이 HCP 워크스페이스를 통해 aws의 인프라를 관리할 수 있게 된다
