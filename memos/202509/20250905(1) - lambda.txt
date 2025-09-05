@@ -1,0 +1,84 @@
+깃허브 레포지토리 - 세팅 - 웹훅
+n8n 서비스? - ai 자동화?
+
+웹훅은 특정 이벤트가 발생하면 POST 리퀘스트를 자동발송한다
+
+
+aws에서 lambda 생성(기본값), 그 후 구성에서 함수 URL 생성
+이 URL을 깃허브 웹훅 Payload URL에 입력
+나머지는 기본값(push 이벤트에만 반응하는 설정)
+
+
+aws lambda의 코드 - 코드소스 수정
+
+export const handler = async (event) => {
+  // TODO implement
+  const response = {
+    statusCode: 200,
+    body: JSON.stringify(event),
+  };
+  return response;
+};
+
+stringify의 내용물을 변경 후 디플로이
+
+
+https://github.com/jhj010311/lambda-automation-test
+
+뭐라도 깃허브에 커밋한 후에는 깃허브의 웹훅 칸에서 발생한 이벤트를 확인 가능
+
+
+
+slack
+마켓플레이스에서 수신 웹후크(webhook으로 검색) 추가
+추가된 웹후크 url을 아마존 람다에 반영
+
+export const handler = async (event) => {
+  try {
+    const SLACK_WEBHOOK_URL = `https://hooks.slack.com/services/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`;
+
+    const message = {
+      text: `Github에서 push 이벤트 발생 \n발생시각 : ${new Date().toLocaleString}`
+    };
+
+    const response = await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(message)
+    });
+
+    if(response.ok) {
+      console.log('메시지 전송 성공');
+    } else {
+      console.error('메시지 전송 실패');
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify('메시지 전송 성공')
+    };
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+
+
+
+
+api gateway 서비스
+완전 관리형 서비스
+REST, HTTP, WebSocket 등의 api를 생성/게시/유지/모니터링/보호 가능
+lambda 함수에 url을 제공
+
+
+lambda를 미리 만들고
+api gateway를 생성한 다음 통합을 생성하고
+라우팅을 추가하고
+통합을 경로에 연결
+
+api 설정 페이지에서 api gateway의 url을 획득해서 접근 가능
