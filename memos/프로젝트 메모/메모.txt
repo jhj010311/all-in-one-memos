@@ -1,0 +1,68 @@
+ocr을 소규모 프로젝트에 비용부담 없이 사용할 수 있는 api나 라이브러리가 있어?
+ChatGPT의 말:
+
+네, 소규모 프로젝트라면 비용 부담 없이 쓸 수 있는 OCR 도구나 API가 몇 가지 있습니다 👍
+
+📌 1. 오픈소스 라이브러리
+
+Tesseract OCR
+
+구글이 오픈소스로 공개한 OCR 엔진
+
+완전히 무료, 로컬에서 동작 → API 호출 비용 없음
+
+여러 언어 지원 (한글도 지원, 다만 정확도는 이미지 품질에 따라 달라짐)
+
+Node.js, Python 등 다양한 바인딩 라이브러리 있음
+
+Python: pytesseract
+
+Node.js: tesseract.js
+
+단점: 클라우드 API보다는 인식률이 낮을 수 있고 속도가 상대적으로 느릴 수 있음
+
+📌 2. 무료 사용량 있는 클라우드 API
+
+Google Cloud Vision API
+
+월 1000건까지 무료
+
+이미지 업로드만 하면 텍스트 추출 가능
+
+Microsoft Azure Computer Vision
+
+무료 티어 있음 (월 5000건까지 가능, 지역별 상이)
+
+AWS Textract
+
+첫 해에 월 1000페이지까지 무료
+
+문서 구조(표, 폼 등)까지 파싱 가능
+
+장점: 정확도가 높음, 특히 난이도 높은 문서 이미지에서 유리
+
+단점: 일정량 넘으면 유료, 인터넷 연결 필요
+
+📌 3. 기타 경량 API
+
+OCR.space
+
+회원가입 없이도 REST API 호출 가능
+
+하루 25,000 요청까지 무료 (제한 있음)
+
+EasyOCR (Python)
+
+딥러닝 기반, 설치형 라이브러리
+
+GPU가 있으면 속도 빠름
+
+다국어 지원, 한글도 잘 되는 편
+
+👉 정리하면:
+
+완전 무료, 로컬에서 → Tesseract / EasyOCR
+
+클라우드에서 높은 정확도 + 일정량 무료 → Google Vision, Azure, AWS Textract
+
+가볍게 REST API만 쓰고 싶다 → OCR.space

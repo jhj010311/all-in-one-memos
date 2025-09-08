@@ -1,0 +1,67 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { ScanCommand } from '@aws-sdk/client-dynamodb';
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+export const handler = async (event) => {
+  try {
+    const method = event.requestContext.http.method;
+
+
+    // POST
+    if(method === 'POST') {
+      // const body = JSON.parse(event.body);
+
+      const {name, age} = event.body;
+
+      console.log(name, age);
+
+      const command = new PutCommand({
+        TableName: 'sesac-jhj-user-table',
+        Item: {
+          id: Date.now().toString(),
+          name: name,
+          age: age,
+          createdAt: new Date().toISOString(),
+        },
+      });
+
+      const response = await docClient.send(command);
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify(response),
+      };
+
+      // GET
+    } else if(method === 'GET') {
+      const command = new ScanCommand({
+        TableName: "sesac-jhj-user-table",
+      });
+
+      const response = await docClient.send(command);
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify(response.Items),
+      };
+    }
+
+
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify(error),
+    };
+  }
+};
+
+
+
+
+
+
+dynamoDB에서 스트림 켜고
+람다에서 트리거 추가
