@@ -1,0 +1,71 @@
+eks msa 프로젝트를 위해 해야하는 것들 목록
+
+- rds
+- eks 클러스터
+- eks 클러스터 노드그룹
+- cloudfront
+- rabbitMQ
+- s3 프론트
+- eks 디플로이 & 서비스
+
+이 중 클러스터, 클러스터 노드, rabbitMQ는 생성시간이 오래 걸리니 먼저 작업할 것
+어차피 나머지 작업들도 이것들이 준비되지 않으면 진행하기 어려움
+
+
+
+
+
+
+작업일지
+
+config-repo의 yml들도 수정하고, secret도 작성하고, deployment.yml도 일부 수정하고
+
+> 실제로 클러스터 만들려고 했을 때 이미 스택이 존재한다면서 생성 불발
+>> 이전 작업일 때 클러스터 삭제와 함께 제대로 삭제되지 않은 모양, 손수 삭제해서 재구축
+
+
+
+
+> 계속해서 pod에서 에러가 발생해서 불발
+>> datasource를 찾지 못한다고 함
+>> config-server pod에서 검사해보니 config repo의 값이 제대로 저장되지 않는 상태
+
+>>> config-server가 home 디렉터리에 쓰기권한이 없어서 저장을 못함
+>>>
+env:
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Duser.home=/tmp"
+
+>>> 이상의 내용을 config-deployment.yml에 추가
+>>> 이후 config-server에서 파일을 쓰지 못한다고 에러나는 일은 사라짐
+
+>> 그러나 여전히 curl 등을 통해서 확인할 수 있는 값에선 yml이 제대로 읽히지 않음
+
+
+📌 즉, Config Server가 참조하는 실제 yml 저장소 주소
+→ https://github.com/jhj010311/aws-labs-v1/tree/main/backend/config-repo
+
+지금 따로 언급한
+
+https://github.com/jhj010311/spring-cloud-msa-labs-v1/tree/main/backend/config-repo
+이 경로는 현재 Config Server 설정상으로는 쓰이지 않고 있는 저장소예요.
+(이전 실습에서 쓰던 레포일 가능성이 높아요.)
+
+
+이런 젠장!
+
+>>> 참조하는 깃허브 주소부터가 잘못되어있었음
+>>> config-server pod가 파일을 쓰지 못하는 상태는 맞긴 했으니 무쓸모한 일은 아니었지만, 허망하다면 허망하다
+
+
+
+
+다음 작업은 docker build 후 푸쉬부터 시작해야할듯
+
+
+
+*** 추가
+쿠버네티스 특성상 config-server는 configmap으로 대체하고,
+eureka server는 service를 통한 내부 dns 통신이 가능하니 필요가 없음
+
+다음에 재시도할 때는 이 둘은 제거하고 시도하기
