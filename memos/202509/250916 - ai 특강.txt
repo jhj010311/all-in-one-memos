@@ -1,0 +1,45 @@
+https://tech-iampam.notion.site/DevOps-AI-V2-2170e474c0f9800aa0f2e7308dff3f8e
+
+
+
+DevOps에도 레이어가 있다
+
+
+LNA? Vector DB? transformer?
+n8m? ncp?
+
+관심은 가지고 있을 것
+
+
+echarts.apache.org
+
+
+
+업무에 대한 이해도가 높아야
+ai 디자인이 좋게 나온다
+
+
+
+아마존이 전반적인 서비스 품질이 좋다
+
+
+
+
+
+AWS AI 서비습별 실습 Lab
+-Lex 실습 가이드
+
+Lex는 중학생 알바 같은 것 >> 초기 Intent(의도) 설정이 필요
+
+Intent, Slot, Utterance
+의도, 슬롯, 발화
+
+
+kendra와 bedrock이 궁합이 좋다
+
+
+-Comprehend 실습 가이드
+-Translate 실습 가이드
+-Kendra 실습 가이드
+-Bedrock 기본 실습 가이드
+-Bedrock RAG 실습 가이드
