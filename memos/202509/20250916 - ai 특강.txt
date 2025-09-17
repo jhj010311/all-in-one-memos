@@ -36,10 +36,3 @@ Intent, Slot, Utterance
 
 
 kendra와 bedrock이 궁합이 좋다
-
-
--Comprehend 실습 가이드
--Translate 실습 가이드
--Kendra 실습 가이드
--Bedrock 기본 실습 가이드
--Bedrock RAG 실습 가이드
