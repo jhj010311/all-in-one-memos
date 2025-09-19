@@ -1,0 +1,761 @@
+2. 코드로 보는 과정
+서버 측 (Spring Boot)
+java
+@RestController
+public class NotificationController {
+
+    // 사용자별 연결을 저장하는 Map
+    private final Map<String, SseEmitter> connections = new ConcurrentHashMap<>();
+
+    @GetMapping(value = "/notifications/stream",
+                produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribe(@RequestParam String userId) {
+
+        // 1. 새로운 SSE 연결 생성 (30분 타임아웃)
+        SseEmitter emitter = new SseEmitter(30 * 60 * 1000L);
+
+        // 2. 사용자별 연결 저장
+        connections.put(userId, emitter);
+
+        // 3. 연결 종료 시 정리 작업
+        emitter.onCompletion(() -> {
+            connections.remove(userId);
+            System.out.println("연결 완료: " + userId);
+        });
+
+        emitter.onTimeout(() -> {
+            connections.remove(userId);
+            System.out.println("연결 타임아웃: " + userId);
+        });
+
+        emitter.onError((ex) -> {
+            connections.remove(userId);
+            System.out.println("연결 오류: " + userId);
+        });
+
+        // 4. 초기 연결 확인 메시지 전송
+        try {
+            emitter.send(SseEmitter.event()
+                .name("connect")
+                .data("연결되었습니다"));
+        } catch (IOException e) {
+            connections.remove(userId);
+        }
+
+        return emitter;
+    }
+
+    // 특정 사용자에게 알림 전송
+    public void sendNotification(String userId, Object data) {
+        SseEmitter emitter = connections.get(userId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event()
+                    .name("notification")
+                    .data(data));
+            } catch (IOException e) {
+                // 전송 실패 시 연결 제거
+                connections.remove(userId);
+            }
+        }
+    }
+}
+클라이언트 측 (JavaScript)
+javascript// 1. SSE 연결 생성
+const eventSource = new EventSource('/notifications/stream?userId=user123');
+
+// 2. 연결 성공 시
+eventSource.onopen = function(event) {
+    console.log('SSE 연결됨');
+};
+
+// 3. 메시지 수신 시
+eventSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    console.log('알림 받음:', data);
+
+    // 알림을 화면에 표시
+    showNotification(data);
+};
+
+// 4. 특정 이벤트 타입 처리
+eventSource.addEventListener('notification', function(event) {
+    const notification = JSON.parse(event.data);
+    displayNotificationModal(notification);
+});
+
+// 5. 연결 오류 시 (자동 재연결됨)
+eventSource.onerror = function(event) {
+    console.log('SSE 연결 오류');
+};
+
+// 6. 연결 종료
+function closeConnection() {
+    eventSource.close();
+}
+연결 관리가 필요한 이유
+1. 메모리 누수 방지
+java// 문제: 사용자가 브라우저를 닫아도 서버에는 연결 정보가 남아있음
+Map<String, SseEmitter> connections = new HashMap<>();
+
+// 해결: 정기적으로 비활성 연결 정리
+@Scheduled(fixedRate = 60000) // 1분마다 실행
+public void cleanupInactiveConnections() {
+    connections.entrySet().removeIf(entry -> {
+        SseEmitter emitter = entry.getValue();
+        try {
+            // 연결 상태 확인용 heartbeat 전송
+            emitter.send(SseEmitter.event().name("heartbeat").data("ping"));
+            return false; // 전송 성공하면 유지
+        } catch (IOException e) {
+            // 전송 실패하면 연결이 끊어진 것으로 판단
+            return true; // 목록에서 제거
+        }
+    });
+}
+2. 실제 연결 상태 vs 저장된 연결 정보 불일치
+시나리오:
+1. 사용자가 브라우저로 SSE 연결
+2. 서버의 connections Map에 연결 정보 저장
+3. 사용자가 갑자기 브라우저 종료 (정상적인 disconnect 없이)
+4. 서버는 여전히 연결이 살아있다고 생각
+5. 알림 전송 시 IOException 발생
+
+해결책: 오류 발생 시 즉시 연결 정보 정리
+3. 확장된 연결 관리 예시
+java@Component
+public class SseConnectionManager {
+
+    private final Map<String, SseConnection> connections = new ConcurrentHashMap<>();
+
+    public static class SseConnection {
+        private final SseEmitter emitter;
+        private final LocalDateTime lastActivity;
+        private final String sessionId;
+
+        // 생성자, getter 등...
+    }
+
+    public SseEmitter createConnection(String userId) {
+        // 기존 연결이 있다면 종료
+        closeExistingConnection(userId);
+
+        SseEmitter emitter = new SseEmitter(30 * 60 * 1000L);
+        String sessionId = UUID.randomUUID().toString();
+
+        SseConnection connection = new SseConnection(emitter, LocalDateTime.now(), sessionId);
+        connections.put(userId, connection);
+
+        // 연결 종료 시 정리
+        emitter.onCompletion(() -> connections.remove(userId));
+        emitter.onTimeout(() -> connections.remove(userId));
+        emitter.onError((ex) -> connections.remove(userId));
+
+        return emitter;
+    }
+
+    @Scheduled(fixedRate = 300000) // 5분마다
+    public void cleanupStaleConnections() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(10);
+
+        connections.entrySet().removeIf(entry -> {
+            SseConnection conn = entry.getValue();
+            if (conn.getLastActivity().isBefore(cutoff)) {
+                try {
+                    conn.getEmitter().complete();
+                } catch (Exception e) {
+                    // 이미 종료된 연결
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+}
+핵심 포인트
+
+SSE는 HTTP 연결이 계속 열려있는 상태
+서버에서 연결 목록을 관리해야 함 (어느 사용자가 연결되어 있는지)
+비정상 종료된 연결을 주기적으로 정리해야 함
+연결 상태와 실제 네트워크 상태가 다를 수 있음
+
+
+
+
+
+
+Redis + 메세지 큐 방식을 추천받음
+
+redis 자체적으로도 메시지를 발행하고 구독할 수 있지만, 안정성이 떨어지기 때문에
+안정성을 확보하고 있는 rabbitMQ 등을 병행하는 것이 전체적인 안정도가 높아진다
+
+
+
+
+내가 msa에서 백엔드 서비스끼리 rabbitmq로 이벤트를 주고받는 것만 경험해서 그런지 이미지가 잘 안 그려지네
+
+팔로우한 이벤트를 구독하는 유저는 프론트엔드에 접속하는 브라우저 하나 말곤 뭐가 없을텐데, 어떤 서비스를 기반으로 구독에 대한 알림을 받을 수 있지?
+
+아 정말 좋은 질문이에요! MSA에서 서비스간 통신만 경험해보셨다면 당연히 헷갈릴 수 있어요.
+
+핵심 포인트: 프론트엔드가 Redis를 직접 구독하는 게 아니라, 중간에 WebSocket 서버가 있어야 해요!
+
+
+전체 아키텍처
+[브라우저] ←WebSocket→ [Notification Service] ←Redis구독→ [Redis] ←발행← [Event Publisher Service]
+
+SSE 기반 구조
+[브라우저] ←SSE← [Notification Service] ←Redis구독← [Redis] ←발행← [Event Publisher]
+
+
+
+[인플루언서가 게시물 작성]
+         ↓
+[Content Service] --"게시물 생성됨"--> [Follow Service]
+         ↓
+[Follow Service] --"팔로워들에게 알림"--> [Notification Service]
+         ↓
+[Notification Service] → 각 팔로워의 SSE 연결 확인
+         ↓
+[연결된 브라우저] ← SSE로 실시간 알림 전송
+
+
+
+
+redis도 rabbitMQ처럼 config.java나 application.yml에 설정을 저장하거나 해?
+있다면 예제 좀 보여줘
+
+네, Redis도 RabbitMQ처럼 설정이 필요해요! Spring Boot에서 Redis를 사용하려면 몇 가지 설정을 해야 합니다.
+
+1. 의존성 추가
+build.gradle
+gradle
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // Lettuce 커넥션 풀 (권장)
+    implementation 'org.apache.commons:commons-pool2'
+
+    // JSON 직렬화용
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+2. application.yml 설정
+기본 설정
+yamlspring:
+  redis:
+    host: localhost
+    port: 6379
+    password: mypassword  # 비밀번호가 있는 경우
+    database: 0           # 기본 DB 번호
+    timeout: 2000ms       # 연결 타임아웃
+
+    # Lettuce 커넥션 풀 설정 (권장)
+    lettuce:
+      pool:
+        max-active: 8     # 최대 활성 연결 수
+        max-idle: 8       # 최대 유휴 연결 수
+        min-idle: 0       # 최소 유휴 연결 수
+        max-wait: -1ms    # 연결 대기 시간 (-1은 무제한)
+      shutdown-timeout: 100ms
+
+    # Jedis 사용 시 (alternative)
+    # jedis:
+    #   pool:
+    #     max-active: 8
+    #     max-idle: 8
+    #     min-idle: 0
+    #     max-wait: -1ms
+
+  # 캐시 설정
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000  # 10분 (밀리초)
+      cache-null-values: false
+환경별 설정
+yaml# application-dev.yml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    password: dev-password
+
+# application-prod.yml
+spring:
+  redis:
+    host: redis-cluster-endpoint
+    port: 6379
+    password: ${REDIS_PASSWORD}
+    ssl: true
+
+    # 클러스터 설정
+    cluster:
+      nodes:
+        - redis-node1:6379
+        - redis-node2:6379
+        - redis-node3:6379
+      max-redirects: 3
+
+    # 센티넬 설정 (고가용성)
+    # sentinel:
+    #   master: mymaster
+    #   nodes:
+    #     - sentinel1:26379
+    #     - sentinel2:26379
+    #     - sentinel3:26379
+3. RedisConfig.java 설정
+기본 Config
+java@Configuration
+@EnableCaching
+@EnableRedisRepositories
+public class RedisConfig {
+
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
+
+    @Value("${spring.redis.password:}")
+    private String redisPassword;
+
+    // Redis 연결 팩토리
+    @Bean
+    public LettuceConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+
+        if (!redisPassword.isEmpty()) {
+            config.setPassword(redisPassword);
+        }
+
+        // 커넥션 풀 설정
+        LettucePoolingClientConfiguration poolConfig = LettucePoolingClientConfiguration.builder()
+            .poolConfig(jedisPoolConfig())
+            .build();
+
+        return new LettuceConnectionFactory(config, poolConfig);
+    }
+
+    // 커넥션 풀 설정
+    @Bean
+    public GenericObjectPoolConfig<?> jedisPoolConfig() {
+        GenericObjectPoolConfig<?> poolConfig = new GenericObjectPoolConfig<>();
+        poolConfig.setMaxTotal(8);
+        poolConfig.setMaxIdle(8);
+        poolConfig.setMinIdle(0);
+        poolConfig.setMaxWaitMillis(-1);
+        return poolConfig;
+    }
+
+    // RedisTemplate 설정 (일반 데이터용)
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate() {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory());
+
+        // JSON 직렬화 설정
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
+        serializer.setObjectMapper(objectMapper);
+
+        // 키는 String, 값은 JSON으로 직렬화
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(serializer);
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(serializer);
+
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    // StringRedisTemplate (문자열 전용)
+    @Bean
+    public StringRedisTemplate stringRedisTemplate() {
+        StringRedisTemplate template = new StringRedisTemplate();
+        template.setConnectionFactory(redisConnectionFactory());
+        return template;
+    }
+}
+Pub/Sub 전용 Config
+java@Configuration
+public class RedisPubSubConfig {
+
+    @Autowired
+    private RedisConnectionFactory connectionFactory;
+
+    // 메시지 리스너 컨테이너
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer() {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+
+        // 스레드 풀 설정
+        container.setTaskExecutor(Executors.newFixedThreadPool(10));
+
+        return container;
+    }
+
+    // 알림 메시지 리스너
+    @Bean
+    public MessageListenerAdapter notificationListener(NotificationMessageListener listener) {
+        return new MessageListenerAdapter(listener, "handleMessage");
+    }
+
+    // 채널 토픽 설정
+    @Bean
+    public ChannelTopic notificationTopic() {
+        return new ChannelTopic("notifications");
+    }
+
+    // 패턴 토픽 설정 (와일드카드 구독)
+    @Bean
+    public PatternTopic userNotificationPattern() {
+        return new PatternTopic("user:*:notifications");
+    }
+}
+캐시 전용 Config
+java@Configuration
+@EnableCaching
+public class RedisCacheConfig {
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(10))  // 기본 TTL 10분
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new Jackson2JsonRedisSerializer<>(Object.class)))
+            .disableCachingNullValues();
+
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(config)
+            .build();
+    }
+
+    // 캐시별 개별 설정
+    @Bean
+    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
+        return (builder) -> builder
+            .withCacheConfiguration("users",
+                RedisCacheConfiguration.defaultCacheConfig()
+                    .entryTtl(Duration.ofMinutes(30)))  // 사용자 캐시는 30분
+            .withCacheConfiguration("notifications",
+                RedisCacheConfiguration.defaultCacheConfig()
+                    .entryTtl(Duration.ofMinutes(5)));   // 알림 캐시는 5분
+    }
+}
+
+
+4. 실제 사용 예시
+Service에서 RedisTemplate 사용
+java@Service
+public class NotificationService {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    // Pub/Sub 메시지 발행
+    public void publishNotification(String userId, String message) {
+        redisTemplate.convertAndSend("user:" + userId + ":notifications", message);
+    }
+
+    // 캐시 저장
+    @Cacheable(value = "notifications", key = "#userId")
+    public List<Notification> getNotifications(String userId) {
+        return notificationRepository.findByUserId(userId);
+    }
+
+    // 직접 Redis 조작
+    public void saveUserSession(String sessionId, UserSession session) {
+        redisTemplate.opsForValue().set("session:" + sessionId, session, Duration.ofHours(2));
+    }
+}
+메시지 리스너
+java@Component
+public class NotificationMessageListener {
+
+    @Autowired
+    private SseEmitterService sseService;
+
+    @RedisMessageListener(patterns = "user:*:notifications")
+    public void handleMessage(String message, String channel) {
+        String userId = extractUserIdFromChannel(channel);
+        sseService.sendToUser(userId, message);
+    }
+}
+
+5. Docker Compose 설정 (개발용)
+yaml# docker-compose.yml
+version: '3.8'
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass mypassword
+    volumes:
+      - redis-data:/data
+    environment:
+      - REDIS_PASSWORD=mypassword
+
+volumes:
+  redis-data:
+
+
+
+
+
+  eks 클러스터 구조에서 생각하면
+  redis는 rabbitMQ처럼 별도의 pod에서 관리
+  sse는 이 경우 notification-service pod에서 관리
+  따라서 sse 연결이 유저 접속 증가로 부족해지는 경우 notification-service의 레플리카를 늘리는 등의 확장이 필요
+  이렇게 생각해도 될까?
+
+  정확하게 이해하셨어요! 👍 하지만 한 가지 중요한 추가 고려사항이 있습니다.
+
+  기본 구조는 맞습니다
+  EKS 클러스터 구성
+  yaml
+  # Redis Pod (StatefulSet)
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: redis
+  spec:
+    serviceName: redis-service
+    replicas: 1
+    template:
+      spec:
+        containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+          - containerPort: 6379
+
+  ---
+  # Notification Service Pod (Deployment)
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: notification-service
+  spec:
+    replicas: 3  # SSE 연결 증가 시 확장
+    template:
+      spec:
+        containers:
+        - name: notification-service
+          image: notification-service:latest
+          ports:
+          - containerPort: 8080
+  ⚠️ 중요한 문제: Sticky Session
+  문제점
+  사용자A → LoadBalancer → notification-service-pod-1 (SSE 연결 생성)
+                        ↓
+            Redis 메시지 → notification-service-pod-2 (연결 정보 없음!)
+  해결방안 1: Session Affinity (권장)
+  yaml
+  # Service with Session Affinity
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: notification-service
+  spec:
+    selector:
+      app: notification-service
+    ports:
+    - port: 80
+      targetPort: 8080
+    sessionAffinity: ClientIP  # 같은 클라이언트는 같은 Pod로
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 3600   # 1시간 동안 같은 Pod 유지
+  해결방안 2: Redis 기반 SSE 연결 공유
+  java
+  @Service
+  public class SharedSseConnectionManager {
+
+      @Autowired
+      private RedisTemplate<String, Object> redisTemplate;
+
+      // 로컬 SSE 연결 (현재 Pod의 연결만)
+      private final Map<String, SseEmitter> localConnections = new ConcurrentHashMap<>();
+
+      // Pod 식별자
+      @Value("${POD_NAME:unknown}")
+      private String podName;
+
+      public SseEmitter createConnection(String userId) {
+          SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+
+          // 로컬에 연결 저장
+          localConnections.put(userId, emitter);
+
+          // Redis에 어느 Pod에 연결되어 있는지 저장
+          redisTemplate.opsForValue().set(
+              "sse:user:" + userId + ":pod",
+              podName,
+              Duration.ofHours(1)
+          );
+
+          emitter.onCompletion(() -> {
+              localConnections.remove(userId);
+              redisTemplate.delete("sse:user:" + userId + ":pod");
+          });
+
+          return emitter;
+      }
+
+      // Redis 메시지를 받아서 적절한 Pod에서만 처리
+      @RedisMessageListener(patterns = "user:*:notifications")
+      public void handleNotification(String message, String channel) {
+          String userId = extractUserIdFromChannel(channel);
+
+          // 이 사용자가 현재 Pod에 연결되어 있는지 확인
+          String connectedPod = (String) redisTemplate.opsForValue()
+              .get("sse:user:" + userId + ":pod");
+
+          if (podName.equals(connectedPod)) {
+              // 현재 Pod에 연결된 사용자라면 SSE로 전송
+              SseEmitter emitter = localConnections.get(userId);
+              if (emitter != null) {
+                  sendToEmitter(emitter, message);
+              }
+          }
+          // 다른 Pod에 연결된 사용자는 무시
+      }
+  }
+  확장 전략
+  1. HPA (Horizontal Pod Autoscaler) 설정
+  yaml
+  apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    name: notification-service-hpa
+  spec:
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: notification-service
+    minReplicas: 2
+    maxReplicas: 20
+    metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    # 커스텀 메트릭: SSE 연결 수
+    - type: Pods
+      pods:
+        metric:
+          name: sse_connections_per_pod
+        target:
+          type: AverageValue
+          averageValue: "1000"  # Pod당 1000개 연결 기준
+  2. SSE 연결 수 모니터링
+  java
+  @Component
+  public class SseMetricsCollector {
+
+      @Autowired
+      private MeterRegistry meterRegistry;
+
+      @Autowired
+      private SharedSseConnectionManager sseManager;
+
+      @PostConstruct
+      public void initMetrics() {
+          // SSE 연결 수 게이지 등록
+          Gauge.builder("sse.connections.active")
+              .description("Active SSE connections in current pod")
+              .register(meterRegistry, sseManager, SseConnectionManager::getActiveConnectionCount);
+      }
+  }
+  3. Ingress 설정 (Sticky Session)
+  yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: notification-ingress
+    annotations:
+      nginx.ingress.kubernetes.io/affinity: "cookie"
+      nginx.ingress.kubernetes.io/affinity-mode: "persistent"
+      nginx.ingress.kubernetes.io/session-cookie-name: "notification-session"
+      nginx.ingress.kubernetes.io/session-cookie-expires: "3600"
+      nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+  spec:
+    rules:
+    - host: notifications.example.com
+      http:
+        paths:
+        - path: /notifications/stream
+          pathType: Prefix
+          backend:
+            service:
+              name: notification-service
+              port:
+                number: 80
+  모니터링 대시보드
+  Kubernetes 리소스 모니터링
+  yaml
+  # ServiceMonitor for Prometheus
+  apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: notification-service-monitor
+  spec:
+    selector:
+      matchLabels:
+        app: notification-service
+    endpoints:
+    - port: metrics
+      path: /actuator/prometheus
+      interval: 30s
+
+
+결론
+당신의 이해가 정확합니다! 추가로:
+
+✅ Redis: 별도 Pod (StatefulSet)
+✅ SSE: notification-service Pod에서 관리
+✅ 확장: 레플리카 증가로 SSE 처리 능력 향상
+⚠️ 주의: Session Affinity 또는 Redis 기반 연결 공유 필요
+
+
+
+
+최종 완성된 플로우
+1. 이벤트 발생 + 팔로워 조회
+        ↓
+2. 각 팔로워별 투트랙 발송 (RabbitMQ + Redis)
+        ↓
+3. Notification Service
+   - RabbitMQ: DB 저장 (대시보드용)
+   - Redis: SSE 즉시 전송 (Pod 확인 + Sticky Session)
+        ↓
+4. 브라우저 수신 (재연결 로직 포함)
+        ↓
+5. 확장성: HPA + 모니터링
+결론
+당신의 정리가 핵심을 완벽하게 잡았어요! 추가한 부분들은:
+
+✅ 팔로워 조회 과정
+✅ 오프라인 사용자 처리 (이미 RabbitMQ로 해결됨)
+✅ 브라우저 재연결 로직
+✅ 성능 최적화 (대규모 팔로워)
+✅ 모니터링 및 장애 처리
