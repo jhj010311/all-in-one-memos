@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔔 Spring Boot 알림 시스템 테스트</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        input, select, button {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 120px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status {
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        
+        .log::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log::-webkit-scrollbar-track {
+            background: #1a202c;
+            border-radius: 4px;
+        }
+        
+        .log::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        
+        .user-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .user-tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .user-tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .event-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .quick-actions {
+            grid-column: 1 / -1;
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input, button {
+                width: 100%;
+            }
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Spring Boot 알림 시스템 테스트</h1>
+            <p>SSE vs 폴링 방식 비교 | 사용자별 타겟팅 테스트</p>
+        </div>
+        
+        <div class="content">
+            <!-- 왼쪽: 인증 및 제어 -->
+            <div>
+                <!-- 빠른 테스트 액션 -->
+                <div class="quick-actions">
+                    <h3>🚀 빠른 테스트</h3>
+                    <div class="user-tabs">
+                        <button class="user-tab active" onclick="switchUser('alice')">👩 앨리스</button>
+                        <button class="user-tab" onclick="switchUser('bob')">👨 밥</button>
+                    </div>
+                    <div class="controls">
+                        <button onclick="quickTest()" style="background: #ff6b6b;">전체 테스트 실행</button>
+                        <button onclick="clearAllLogs()" style="background: #6c757d;">로그 초기화</button>
+                    </div>
+                </div>
+
+                <!-- 인증 섹션 -->
+                <div class="section">
+                    <h3>🔐 사용자 인증</h3>
+                    <div class="controls">
+                        <input type="text" id="userId" placeholder="사용자 ID" value="alice">
+                        <button onclick="login()">로그인</button>
+                        <span id="authStatus" class="status disconnected">미인증</span>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; word-break: break-all;">
+                        토큰: <span id="tokenDisplay" style="color: #666;">없음</span>
+                    </div>
+                </div>
+
+                <!-- SSE 섹션 -->
+                <div class="section">
+                    <h3>📡 SSE (Server-Sent Events)</h3>
+                    <div class="controls">
+                        <button onclick="connectSSE()" id="sseConnect">SSE 연결</button>
+                        <button onclick="disconnectSSE()" id="sseDisconnect" disabled>연결 해제</button>
+                        <span id="sseStatus" class="status disconnected">연결 안됨</span>
+                    </div>
+                    <div class="stats">
+                        <span>수신: <span id="sseReceived">0</span>개</span>
+                        <span>연결시간: <span id="sseUptime">-</span></span>
+                    </div>
+                </div>
+
+                <!-- 폴링 섹션 -->
+                <div class="section">
+                    <h3>📮 폴링 (Polling)</h3>
+                    <div class="controls">
+                        <button onclick="startPolling()" id="pollStart">폴링 시작</button>
+                        <button onclick="stopPolling()" id="pollStop" disabled>폴링 중지</button>
+                        <button onclick="pollOnce()">수동 조회</button>
+                        <span id="pollStatus" class="status disconnected">중지됨</span>
+                    </div>
+                    <div class="stats">
+                        <span>조회: <span id="pollCount">0</span>회</span>
+                        <span>수신: <span id="pollReceived">0</span>개</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 이벤트 발행 -->
+            <div>
+                <!-- 이벤트 발행 섹션 -->
+                <div class="section">
+                    <h3>📤 이벤트 발행</h3>
+                    <div class="controls">
+                        <select id="targetUser">
+                            <option value="alice">👩 앨리스</option>
+                            <option value="bob">👨 밥</option>
+                            <option value="all">🌍 전체</option>
+                        </select>
+                        <input type="text" id="eventMessage" placeholder="메시지 내용" value="테스트 메시지">
+                    </div>
+                    
+                    <div class="event-buttons">
+                        <button onclick="sendPersonalMessage()">개인 메시지</button>
+                        <button onclick="sendBroadcast()">전체 공지</button>
+                        <button onclick="sendUrgent()">긴급 알림</button>
+                        <button onclick="sendBulk()">대량 테스트 (5개)</button>
+                    </div>
+                </div>
+
+                <!-- 시나리오 테스트 -->
+                <div class="section">
+                    <h3>🎯 시나리오 테스트</h3>
+                    <div class="event-buttons">
+                        <button onclick="testTargeting()">타겟팅 테스트</button>
+                        <button onclick="testAuthentication()">인증 테스트</button>
+                        <button onclick="testSSEvsPolling()">SSE vs 폴링</button>
+                        <button onclick="stressTest()">부하 테스트</button>
+                    </div>
+                </div>
+
+                <!-- 서버 상태 -->
+                <div class="section">
+                    <h3>📊 서버 상태</h3>
+                    <div class="controls">
+                        <button onclick="checkServerStatus()">상태 확인</button>
+                        <button onclick="checkConnections()">연결 현황</button>
+                    </div>
+                    <div id="serverStatus" style="margin-top: 10px; font-size: 14px; color: #666;">
+                        서버 상태를 확인하려면 버튼을 클릭하세요.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로그 섹션 -->
+        <div style="padding: 0 30px 30px;">
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <h3 style="margin-bottom: 10px;">📡 SSE 로그</h3>
+                    <div class="log" id="sseLog">SSE 연결 로그가 여기에 표시됩니다...</div>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin-bottom: 10px;">📮 폴링 로그</h3>
+                    <div class="log" id="pollLog">폴링 로그가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentUser = 'alice';
+        let token = '';
+        let eventSource = null;
+        let pollingInterval = null;
+        let sseConnectedTime = null;
+        let sseReceivedCount = 0;
+        let pollCount = 0;
+        let pollReceivedCount = 0;
+
+        // 서버 URL (필요시 수정)
+        const EVENT_PUBLISHER_URL = 'http://localhost:3001';
+        const NOTIFICATION_SERVICE_URL = 'http://localhost:3002';
+
+        // === 유틸리티 함수들 ===
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            element.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        function updateStatus(elementId, text, connected = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        function updateStats() {
+            document.getElementById('sseReceived').textContent = sseReceivedCount;
+            document.getElementById('pollCount').textContent = pollCount;
+            document.getElementById('pollReceived').textContent = pollReceivedCount;
+            
+            if (sseConnectedTime) {
+                const uptime = Math.floor((Date.now() - sseConnectedTime) / 1000);
+                document.getElementById('sseUptime').textContent = `${uptime}초`;
+            }
+        }
+
+        // === 사용자 전환 ===
+        
+        function switchUser(userId) {
+            currentUser = userId;
+            document.getElementById('userId').value = userId;
+            
+            // 탭 활성화 상태 변경
+            document.querySelectorAll('.user-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            log('sseLog', `👤 사용자 전환: ${userId}`, 'info');
+            log('pollLog', `👤 사용자 전환: ${userId}`, 'info');
+        }
+
+        // === 인증 관련 ===
+        
+        async function login() {
+            const userId = document.getElementById('userId').value.trim();
+            if (!userId) {
+                alert('사용자 ID를 입력하세요!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${EVENT_PUBLISHER_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId, userName: userId === 'alice' ? '앨리스' : '밥' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`로그인 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                token = data.token;
+                
+                updateStatus('authStatus', '인증됨', true);
+                document.getElementById('tokenDisplay').textContent = token.substring(0, 30) + '...';
+                
+                log('sseLog', `✅ 로그인 성공: ${userId}`, 'success');
+                log('pollLog', `✅ 로그인 성공: ${userId}`, 'success');
+
+            } catch (error) {
+                log('sseLog', `❌ 로그인 실패: ${error.message}`, 'error');
+                log('pollLog', `❌ 로그인 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // === SSE 관련 ===
+        
+        function connectSSE() {
+            if (!token) {
+                alert('먼저 로그인하세요!');
+                return;
+            }
+
+            try {
+                eventSource = new EventSource(`${NOTIFICATION_SERVICE_URL}/notifications/sse?token=${token}`);
+                
+                eventSource.onopen = function() {
+                    updateStatus('sseStatus', '연결됨', true);
+                    document.getElementById('sseConnect').disabled = true;
+                    document.getElementById('sseDisconnect').disabled = false;
+                    sseConnectedTime = Date.now();
+                    log('sseLog', '🔗 SSE 연결 성공', 'success');
+                };
+
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        sseReceivedCount++;
+                        updateStats();
+                        
+                        if (data.type === 'connection-success') {
+                            log('sseLog', `🎉 ${data.message}`, 'success');
+                        } else {
+                            log('sseLog', `📨 수신: ${data.type} - ${data.message || JSON.stringify(data.data)}`, 'info');
+                        }
+                    } catch (e) {
+                        log('sseLog', `📨 수신: ${event.data}`, 'info');
+                        sseReceivedCount++;
+                        updateStats();
+                    }
+                };
+
+                eventSource.onerror = function(error) {
+                    log('sseLog', `❌ SSE 오류 발생`, 'error');
+                };
+
+            } catch (error) {
+                log('sseLog', `❌ SSE 연결 실패: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnectSSE() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            updateStatus('sseStatus', '연결 안됨', false);
+            document.getElementById('sseConnect').disabled = false;
+            document.getElementById('sseDisconnect').disabled = true;
+            sseConnectedTime = null;
+            document.getElementById('sseUptime').textContent = '-';
+            log('sseLog', '🔌 SSE 연결 해제', 'warning');
+        }
+
+        // === 폴링 관련 ===
+        
+        function startPolling() {
+            if (!token) {
+                alert('먼저 로그인하세요!');
+                return;
+            }
+
+            pollingInterval = setInterval(pollOnce, 3000);
+            
+            updateStatus('pollStatus', '실행중', true);
+            document.getElementById('pollStart').disabled = true;
+            document.getElementById('pollStop').disabled = false;
+            
+            log('pollLog', '🔄 폴링 시작 (3초 간격)', 'success');
+            pollOnce();
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            
+            updateStatus('pollStatus', '중지됨', false);
+            document.getElementById('pollStart').disabled = false;
+            document.getElementById('pollStop').disabled = true;
+            
+            log('pollLog', '⏹️ 폴링 중지', 'warning');
+        }
+
+        async function pollOnce() {
+            if (!token) {
+                alert('먼저 로그인하세요!');
+                return;
+            }
+
+            try {
+                pollCount++;
+                updateStats();
+                
+                const response = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/poll`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`폴링 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(notification => {
+                        pollReceivedCount++;
+                        log('pollLog', `📮 조회: ${notification.type} - ${notification.message || JSON.stringify(notification.data)}`, 'info');
+                    });
+                    updateStats();
+                } else {
+                    log('pollLog', '📭 새 알림 없음', 'info');
+                }
+
+            } catch (error) {
+                log('pollLog', `❌ 폴링 오류: ${error.message}`, 'error');
+            }
+        }
+
+        // === 이벤트 발행 ===
+        
+        async function sendPersonalMessage() {
+            const targetUserId = document.getElementById('targetUser').value;
+            const message = document.getElementById('eventMessage').value;
+            
+            if (!message.trim()) {
+                alert('메시지를 입력하세요!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${EVENT_PUBLISHER_URL}/events/send-to-user?targetUserId=${targetUserId}&message=${encodeURIComponent(message)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`발송 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log('sseLog', `📤 개인 메시지 발행: ${data.eventId} → ${targetUserId}`, 'success');
+                log('pollLog', `📤 개인 메시지 발행: ${data.eventId} → ${targetUserId}`, 'success');
+
+            } catch (error) {
+                log('sseLog', `❌ 발행 실패: ${error.message}`, 'error');
+                log('pollLog', `❌ 발행 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendBroadcast() {
+            const message = document.getElementById('eventMessage').value;
+            
+            if (!message.trim()) {
+                alert('메시지를 입력하세요!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${EVENT_PUBLISHER_URL}/events/broadcast?message=${encodeURIComponent(message)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`브로드캐스트 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log('sseLog', `📢 브로드캐스트 발행: ${data.eventId}`, 'success');
+                log('pollLog', `📢 브로드캐스트 발행: ${data.eventId}`, 'success');
+
+            } catch (error) {
+                log('sseLog', `❌ 브로드캐스트 실패: ${error.message}`, 'error');
+                log('pollLog', `❌ 브로드캐스트 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendUrgent() {
+            const targetUserId = document.getElementById('targetUser').value;
+            const message = `🚨 긴급: ${document.getElementById('eventMessage').value}`;
+
+            try {
+                const response = await fetch(`${EVENT_PUBLISHER_URL}/events/publish`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        targetUserId: targetUserId,
+                        eventType: 'urgent-notification',
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`긴급 알림 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log('sseLog', `🚨 긴급 알림 발행: ${data.eventId}`, 'warning');
+                log('pollLog', `🚨 긴급 알림 발행: ${data.eventId}`, 'warning');
+
+            } catch (error) {
+                log('sseLog', `❌ 긴급 알림 실패: ${error.message}`, 'error');
+                log('pollLog', `❌ 긴급 알림 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendBulk() {
+            const targetUserId = document.getElementById('targetUser').value;
+
+            try {
+                const response = await fetch(`${EVENT_PUBLISHER_URL}/events/bulk-test?targetUserId=${targetUserId}&count=5`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`대량 발송 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log('sseLog', `📦 대량 발송 완료: ${data.published}개 → ${targetUserId}`, 'success');
+                log('pollLog', `📦 대량 발송 완료: ${data.published}개 → ${targetUserId}`, 'success');
+
+            } catch (error) {
+                log('sseLog', `❌ 대량 발송 실패: ${error.message}`, 'error');
+                log('pollLog', `❌ 대량 발송 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // === 테스트 시나리오 ===
+        
+        async function quickTest() {
+            log('sseLog', '🚀 빠른 테스트 시작', 'success');
+            log('pollLog', '🚀 빠른 테스트 시작', 'success');
+            
+            await login();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            connectSSE();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            startPolling();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            document.getElementById('eventMessage').value = '빠른 테스트 메시지';
+            await sendPersonalMessage();
+            
+            log('sseLog', '✅ 빠른 테스트 완료', 'success');
+            log('pollLog', '✅ 빠른 테스트 완료', 'success');
+        }
+
+        async function testTargeting() {
+            log('sseLog', '🎯 타겟팅 테스트 시작', 'success');
+            
+            // 앨리스에게만 발송
+            document.getElementById('targetUser').value = 'alice';
+            document.getElementById('eventMessage').value = '앨리스만 받을 메시지';
+            await sendPersonalMessage();
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 밥에게만 발송
+            document.getElementById('targetUser').value = 'bob';
+            document.getElementById('eventMessage').value = '밥만 받을 메시지';
+            await sendPersonalMessage();
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 전체 발송
+            document.getElementById('targetUser').value = 'all';
+            document.getElementById('eventMessage').value = '모두가 받을 메시지';
+            await sendBroadcast();
+            
+            log('sseLog', '✅ 타겟팅 테스트 완료', 'success');
+        }
+
+        async function checkServerStatus() {
+            try {
+                const eventPublisherResponse = await fetch(`${EVENT_PUBLISHER_URL}/health`);
+                const notificationServiceResponse = await fetch(`${NOTIFICATION_SERVICE_URL}/health`);
+                
+                const eventPublisherStatus = eventPublisherResponse.ok ? '✅ 정상' : '❌ 오류';
+                const notificationServiceStatus = notificationServiceResponse.ok ? '✅ 정상' : '❌ 오류';
+                
+                document.getElementById('serverStatus').innerHTML = `
+                    Event Publisher (3001): ${eventPublisherStatus}<br>
+                    Notification Service (3002): ${notificationServiceStatus}
+                `;
+                
+            } catch (error) {
+                document.getElementById('serverStatus').innerHTML = `❌ 서버 연결 실패: ${error.message}`;
+            }
+        }
+
+        function clearAllLogs() {
+            document.getElementById('sseLog').innerHTML = 'SSE 로그 초기화됨...';
+            document.getElementById('pollLog').innerHTML = '폴링 로그 초기화됨...';
+            sseReceivedCount = 0;
+            pollCount = 0;
+            pollReceivedCount = 0;
+            updateStats();
+        }
+
+        // === 초기화 ===
+        
+        // 페이지 로드 시 통계 업데이트 시작
+        setInterval(updateStats, 1000);
+        
+        // 초기 서버 상태 확인
+        setTimeout(checkServerStatus, 1000);
+    </script>
+</body>
+</html>

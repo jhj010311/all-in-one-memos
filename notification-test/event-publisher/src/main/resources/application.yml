@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: event-publisher
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 3001  # event-publisher
+  # port: 3002  # notification-service
+
+logging:
+  level:
+    root: INFO
+    com.example: DEBUG
+    org.springframework.data.redis: DEBUG  # Redis 로그 확인용
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+jwt:
+  secret: notification-test-secret-key-2024-very-long-secret-for-security-must-be-at-least-32-characters-long
+  expiration: 3600000  # 1시간
