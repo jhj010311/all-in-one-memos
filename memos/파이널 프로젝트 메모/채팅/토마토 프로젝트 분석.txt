@@ -1,0 +1,10 @@
+기본 구조
+
+ChatApiController, ChatWebsocketController, TesController
+
+ChatApiService ~ ChatWebsocketService, RoomService
+
+기타 레포지토리/dto
+
+
+Room이 있고 그 안에 Chat들이 존재하는 구조
