@@ -11,6 +11,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/chat-test2/chat-service-gpt" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/chat-test2/chat-service-gpt" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/notification-test/event-publisher" />
         <option name="modules">
           <set>

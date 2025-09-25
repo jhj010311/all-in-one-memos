@@ -18,7 +18,13 @@
     </loaded-modules>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ffc2234b-3433-4a0b-a249-24ae582a7be2" name="변경" comment="" />
+    <list default="true" id="ffc2234b-3433-4a0b-a249-24ae582a7be2" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-test/chat-service/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/chat-test/chat-service/src/main/resources/application.yml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,6 +38,9 @@
       <ProjectState />
     </projectState>
     <projectState path="$PROJECT_DIR$/chat-test/chat-service">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/chat-test2/chat-service-gpt">
       <ProjectState />
     </projectState>
     <projectState path="$PROJECT_DIR$/notification-test/event-publisher">
@@ -49,17 +58,20 @@
         </task>
         <projects_view>
           <tree_state>
-            <expand>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="chat-service" type="f1a62948:ProjectNode" />
-              </path>
-            </expand>
+            <expand />
             <select />
           </tree_state>
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="package.json" />
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -79,32 +91,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.chat-service 빌드.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.event-publisher 빌드.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.notification-service 빌드.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Sesac JHJ/Git/all-in-one-memos&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;모듈&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle.executor": "Run",
+    "Gradle.chat-service 빌드.executor": "Run",
+    "Gradle.event-publisher 빌드.executor": "Run",
+    "Gradle.notification-service 빌드.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.ChatServiceApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-frontend/src",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "모듈",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "terminal",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Sesac JHJ\Git\all-in-one-memos\chat-test\chat-frontend\src" />
       <recent name="C:\Sesac JHJ\Git\all-in-one-memos\memos\202509\20250908 - eks 실습\hello-eks" />
       <recent name="C:\Sesac JHJ\Git\all-in-one-memos\memos\202509\20250908 - eks 실습" />
     </key>
@@ -123,30 +137,17 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle">
-    <configuration name="C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$/chat-test/chat-service/build.gradle" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list />
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>false</RunAsTest>
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Spring Boot.ChatServiceApplication">
     <configuration name="ChatServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="chat-service.main" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.sesac.chatservice.ChatServiceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ChatServiceGptApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="chat-service-gpt.main" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sesac.chatservicegpt.ChatServiceGptApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -166,16 +167,11 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Gradle.C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle" />
+      <item itemvalue="Spring Boot.ChatServiceGptApplication" />
       <item itemvalue="Spring Boot.ChatServiceApplication" />
       <item itemvalue="Spring Boot.EventPublisherApplication" />
       <item itemvalue="Spring Boot.NotificationServiceApplication" />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Gradle.C:/Sesac JHJ/Git/all-in-one-memos/chat-test/chat-service/build.gradle" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -213,7 +209,7 @@
       <workItem from="1758769514102" duration="80000" />
       <workItem from="1758769617260" duration="96000" />
       <workItem from="1758769738490" duration="206000" />
-      <workItem from="1758769951842" duration="340000" />
+      <workItem from="1758769951842" duration="6586000" />
     </task>
     <servers />
   </component>

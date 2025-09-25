@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Boot Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
+        input, button { padding: 5px; }
+    </style>
+</head>
+<body>
+<h2>채팅방</h2>
+<div>
+    방 ID: <input id="roomId" value="room1" />
+    닉네임: <input id="sender" value="user1" />
+    <button onclick="connect()">접속</button>
+</div>
+
+<div id="chat-box"></div>
+
+<div>
+    <input id="message" placeholder="메시지를 입력하세요" style="width:70%">
+    <button onclick="sendMessage()">전송</button>
+</div>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const roomId = document.getElementById("roomId").value;
+        const socket = new SockJS("/ws-chat");
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, () => {
+            appendMessage("[시스템] 채팅방에 접속했습니다.");
+            stompClient.subscribe("/topic/" + roomId, (msg) => {
+                const body = JSON.parse(msg.body);
+                appendMessage(body.sender + ": " + body.message);
+            });
+        });
+    }
+
+    function sendMessage() {
+        const roomId = document.getElementById("roomId").value;
+        const sender = document.getElementById("sender").value;
+        const message = document.getElementById("message").value;
+
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+            roomId: roomId,
+            sender: sender,
+            message: message
+        }));
+        document.getElementById("message").value = "";
+    }
+
+    function appendMessage(msg) {
+        const chatBox = document.getElementById("chat-box");
+        const p = document.createElement("p");
+        p.textContent = msg;
+        chatBox.appendChild(p);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+</body>
+</html>
