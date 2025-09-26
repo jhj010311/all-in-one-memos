@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/all-in-one-memos.iml" filepath="$PROJECT_DIR$/.idea/all-in-one-memos.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chat-service-gpt.main.iml" filepath="$PROJECT_DIR$/.idea/modules/chat-service-gpt.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/event-publisher.main.iml" filepath="$PROJECT_DIR$/.idea/modules/event-publisher.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/event-publisher.test.iml" filepath="$PROJECT_DIR$/.idea/modules/event-publisher.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service.main.iml" />

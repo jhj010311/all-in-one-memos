@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: chat-service-gpt
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chatdb
+    username: chatuser
+    password: chatpass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
