@@ -19,12 +19,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ffc2234b-3433-4a0b-a249-24ae582a7be2" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/modules/chat-service-gpt.main.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/chat-test2/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chat-test2/chat-service-gpt/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/chat-test2/chat-service-gpt/build.gradle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/java/com/sesac/chatservicegpt/RedisConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/java/com/sesac/chatservicegpt/RedisConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-test2/chat-service-gpt/src/main/resources/application.properties" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -216,7 +219,7 @@
       <workItem from="1758769514102" duration="80000" />
       <workItem from="1758769617260" duration="96000" />
       <workItem from="1758769738490" duration="206000" />
-      <workItem from="1758769951842" duration="9016000" />
+      <workItem from="1758769951842" duration="9891000" />
     </task>
     <servers />
   </component>
